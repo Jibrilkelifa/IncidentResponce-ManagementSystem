@@ -5,6 +5,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Optional;
+
 @Service
 public class IncidentService {
     @Autowired
@@ -33,8 +35,12 @@ public class IncidentService {
         incidentRepository.deleteById(id);
     }
     public Incident getIncidentById(Long id) {
-        return incidentRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Incident not found"));
+        Optional<Incident> incident = incidentRepository.findById(id);
+        if (incident.isPresent()) {
+            return incident.get();
+        } else {
+            throw new RuntimeException("Incident not found for ID: " + id);
+        }
     }
     public void deleteAllIncidents() {
         incidentRepository.deleteAll();
