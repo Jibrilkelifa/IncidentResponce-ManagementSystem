@@ -1,14 +1,14 @@
 package com.example.Incident.model;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
+import com.fasterxml.jackson.annotation.JsonManagedReference; // Import Jackson annotation
+import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
+import java.util.List;
+
 @Entity
 @Data
 @NoArgsConstructor
@@ -22,8 +22,12 @@ public class Incident {
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     private String escalatedTo;
+    private String severity;
+    private String affectedSystem;
     private String escalatedBy;
     private boolean escalated;
 
-
+    @OneToMany(mappedBy = "incident", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @JsonManagedReference // Manage serialization for updates
+    private List<Update> updates; // List of updates associated with the incident
 }
