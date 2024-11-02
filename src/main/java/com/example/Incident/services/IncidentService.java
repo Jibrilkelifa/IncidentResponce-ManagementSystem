@@ -26,20 +26,21 @@ public class IncidentService {
     public List<Incident> getAllIncidents() {
         return incidentRepository.findAll();
     }
-    public Incident escalateIncident(Long id, String escalatedTo) {
+    public Incident escalateIncident(Long id, Incident escalationDetails) {
         Incident incident = incidentRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Incident not found"));
 
-        // Update the escalated status
         incident.setEscalated(true);
-        incident.setEscalatedTo(escalatedTo);
-        Incident updatedIncident = incidentRepository.save(incident);
+        incident.setEscalatedTo(escalationDetails.getEscalatedTo());
+        incident.setEscalatedToEmail(escalationDetails.getEscalatedToEmail());
+        incident.setSource(escalationDetails.getSource());
+        incident.setStatus("Escalated");
 
-        // Send escalation notification
-        notificationService.sendEscalationNotification(updatedIncident, escalatedTo);
-
-        return updatedIncident;
+//        notificationService.sendEscalationNotification(incident, escalationDetails.getEscalatedToEmail());
+        return incidentRepository.save(incident);
     }
+
+
     public void deleteIncident(Long id) {
         if (!incidentRepository.existsById(id)) {
             throw new RuntimeException("Incident not found");
@@ -78,5 +79,8 @@ public class IncidentService {
     }
 
 
+    public List<Incident> getEscalatedIncidentsForUser(String loggedInUserEmail) {
+        return incidentRepository.findByEscalatedToEmail(loggedInUserEmail);
+    }
 
 }

@@ -8,6 +8,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -28,7 +29,7 @@ public class IncidentController {
     }
 
     @GetMapping("/list/all")
-//    @PreAuthorize("hasAnyRole('USER')")
+    @PreAuthorize("hasAnyRole('USER')")
     public ResponseEntity<List<Incident>> getAllIncidents() {
         List<Incident> incidents = incidentService.getAllIncidents();
         return ResponseEntity.ok(incidents);
@@ -42,10 +43,29 @@ public class IncidentController {
     }
 
     @PutMapping("/{id}/escalate")
-    public ResponseEntity<Incident> escalateIncident(@PathVariable Long id, @RequestBody String escalatedTo) {
-        Incident updatedIncident = incidentService.escalateIncident(id, escalatedTo);
+    @PreAuthorize("hasAnyRole('USER')")
+    public ResponseEntity<Incident> escalateIncident(
+            @PathVariable Long id,
+            @RequestBody Incident escalationDetails) {
+        Incident updatedIncident = incidentService.escalateIncident(id, escalationDetails);
         return ResponseEntity.ok(updatedIncident);
     }
+    @GetMapping("/escalations")
+    @PreAuthorize("hasAnyRole('USER')")
+    public ResponseEntity<List<Incident>> getEscalatedIncidents() {
+        // Fetch the email of the logged-in user
+        String loggedInUserEmail = getLoggedInUserEmail();
+        // Fetch escalated incidents assigned to this user
+        List<Incident> escalatedIncidents = incidentService.getEscalatedIncidentsForUser(loggedInUserEmail);
+        return ResponseEntity.ok(escalatedIncidents);
+    }
+
+    private String getLoggedInUserEmail() {
+        System.out.println(SecurityContextHolder.getContext().getAuthentication().getName());
+        return SecurityContextHolder.getContext().getAuthentication().getName();
+
+    }
+
 
 
     @DeleteMapping("/delete/all")
