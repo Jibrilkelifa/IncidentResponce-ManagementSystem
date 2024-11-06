@@ -86,6 +86,26 @@ public class IncidentController {
         return ResponseEntity.noContent().build(); // 204 No Content
     }
 
+    @GetMapping("/by-affected-system")
+    @PreAuthorize("hasAnyRole('USER')")
+    public List<Incident> getIncidentsByAffectedSystem(@RequestParam String affectedSystem) {
+        return incidentService.getIncidentsByAffectedSystem(affectedSystem);
+    }
+
+    // Endpoint to get incidents by source
+    @GetMapping("/by-source")
+    @PreAuthorize("hasAnyRole('USER')")
+    public List<Incident> getIncidentsBySource(@RequestParam String source) {
+        return incidentService.getIncidentsBySource(source);
+    }
+
+    // Endpoint to get incidents by escalation target
+    @GetMapping("/by-escalated-to")
+    @PreAuthorize("hasAnyRole('USER')")
+    public List<Incident> getIncidentsByEscalatedTo(@RequestParam String escalatedTo) {
+        return incidentService.getIncidentsByEscalatedTo(escalatedTo);
+    }
+
 
 }
 

@@ -82,5 +82,16 @@ public class IncidentService {
     public List<Incident> getEscalatedIncidentsForUser(String loggedInUserEmail) {
         return incidentRepository.findByEscalatedToEmail(loggedInUserEmail);
     }
+    public List<Incident> getIncidentsByAffectedSystem(String affectedSystem) {
+        return incidentRepository.findByAffectedSystem(affectedSystem);
+    }
+
+    public List<Incident> getIncidentsBySource(String source) {
+        return incidentRepository.findBySource(source);
+    }
+
+    public List<Incident> getIncidentsByEscalatedTo(String escalatedTo) {
+        return incidentRepository.findByEscalatedTo(escalatedTo);
+    }
 
 }

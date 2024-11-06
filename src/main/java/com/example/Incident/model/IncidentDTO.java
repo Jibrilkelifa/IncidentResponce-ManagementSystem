@@ -1,11 +1,16 @@
-package com.example.Incident.model;
+package com.example.Incident.dto;
 
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
 public class IncidentDTO {
-//    @NotBlank(message = "Description cannot be empty")
-    private String description;
-
-    private String status;
-    private String escalatedTo;
-    private String escalatedBy;
+    private String offenceName;
+    private String rootCause;
+    private String affectedAsset;
+    private String ipAddress;
+    private String recommendedAction;
 }
-

@@ -10,4 +10,9 @@ import java.util.List;
 public interface IncidentRepository extends JpaRepository<Incident, Long> {
 
     List<Incident> findByEscalatedToEmail(String loggedInUserEmail);
+    List<Incident> findByAffectedSystem(String affectedSystem);
+
+    List<Incident> findBySource(String source);
+
+    List<Incident> findByEscalatedTo(String escalatedTo);
 }

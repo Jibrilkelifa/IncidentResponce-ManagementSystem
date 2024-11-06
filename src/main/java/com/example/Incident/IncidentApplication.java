@@ -10,7 +10,8 @@ import org.springframework.web.filter.CorsFilter;
 import java.util.Arrays;
 
 @SpringBootApplication
-public class IncidentApplication {
+public class
+IncidentApplication {
 
 	public static void main(String[] args) {
 		SpringApplication.run(IncidentApplication.class, args);
