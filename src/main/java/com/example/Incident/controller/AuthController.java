@@ -1,8 +1,10 @@
 package com.example.Incident.controller;
 
 import com.example.Incident.model.AuthRequest;
+import com.example.Incident.model.ResetPasswordRequest;
 import com.example.Incident.model.User;
 import com.example.Incident.repo.UserRepository;
+import com.example.Incident.services.NotificationService;
 import com.example.Incident.services.jwt.JwtUtil;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -10,11 +12,15 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -23,12 +29,14 @@ public class AuthController {
     private final AuthenticationManager authenticationManager;
     private final JwtUtil jwtUtil;
     private final UserRepository userRepository;
+    private  final NotificationService notificationService;
     private final PasswordEncoder passwordEncoder;
 
-    public AuthController(AuthenticationManager authenticationManager, JwtUtil jwtUtil, UserRepository userRepository, PasswordEncoder passwordEncoder) {
+    public AuthController(AuthenticationManager authenticationManager, JwtUtil jwtUtil, UserRepository userRepository, NotificationService notificationService, PasswordEncoder passwordEncoder) {
         this.authenticationManager = authenticationManager;
         this.jwtUtil = jwtUtil;
         this.userRepository = userRepository;
+        this.notificationService = notificationService;
         this.passwordEncoder = passwordEncoder;
     }
 
@@ -40,7 +48,6 @@ public class AuthController {
         String token = jwtUtil.generateToken(authRequest.getUsername());
         return ResponseEntity.ok(Map.of("token", token));
     }
-
 
     @PostMapping("/signup")
     public ResponseEntity<Map<String, String>> signup(@RequestBody AuthRequest authRequest) {
@@ -66,6 +73,77 @@ public class AuthController {
 
         return new ResponseEntity<>(Map.of("message", "User registered successfully"), HttpStatus.CREATED);
     }
+
+    @PostMapping("/forgot-password")
+    public ResponseEntity<Map<String, String>> forgotPassword(@RequestBody Map<String, String> payload) {
+        String email = payload.get("email");
+        Optional<User> userOptional = userRepository.findByUsername(email);
+
+        if (userOptional.isEmpty()) {
+            Map<String, String> response = new HashMap<>();
+            response.put("message", "User not found");
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
+        }
+
+        User user = userOptional.get();
+        String token = UUID.randomUUID().toString();
+        user.setResetToken(token);
+        user.setResetTokenExpiry(LocalDateTime.now().plusMinutes(15));
+        userRepository.save(user);
+
+        // Send reset password email with the reset token
+        notificationService.sendResetPasswordEmail(email, "Password Reset Request", token);
+
+        Map<String, String> response = new HashMap<>();
+        response.put("message", "Password reset link has been sent to your email.");
+        return ResponseEntity.ok(response);
+    }
+
+    // Reset password
+    @PostMapping("/reset-password")
+    public ResponseEntity<String> resetPassword(@RequestBody ResetPasswordRequest request) {
+        String token = request.getToken();
+        String newPassword = request.getNewPassword();
+        String confirmPassword = request.getConfirmPassword();
+
+        // Check if the passwords match
+        if (!newPassword.equals(confirmPassword)) {
+            return ResponseEntity.badRequest().body("Passwords do not match.");
+        }
+
+        // Find the user by reset token
+        Optional<User> userOptional = userRepository.findByResetToken(token);
+
+        // Log the result of the token lookup
+        if (userOptional.isEmpty()) {
+            System.out.println("No user found with token: " + token);
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Invalid token.");
+        }
+
+        User user = userOptional.get();
+        System.out.println("User found: " + user.getUsername());
+
+        // Check if the token has expired
+        if (user.getResetTokenExpiry() != null && user.getResetTokenExpiry().isBefore(LocalDateTime.now())) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Token has expired.");
+        }
+
+        // Hash the new password before saving
+        BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
+        String hashedPassword = passwordEncoder.encode(newPassword);
+        user.setPassword(hashedPassword);
+
+        // Clear the reset token and expiry date
+        user.setResetToken(null);
+        user.setResetTokenExpiry(null);
+
+        // Save the updated user
+        userRepository.save(user);
+
+        return ResponseEntity.ok("Password reset successfully.");
+    }
+
+
 
 
 

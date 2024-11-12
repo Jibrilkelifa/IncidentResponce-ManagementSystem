@@ -8,7 +8,9 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 public class IncidentService {
@@ -33,12 +35,28 @@ public class IncidentService {
         incident.setEscalated(true);
         incident.setEscalatedTo(escalationDetails.getEscalatedTo());
         incident.setEscalatedToEmail(escalationDetails.getEscalatedToEmail());
+        incident.setEscalatedToPhoneNumber(escalationDetails.getEscalatedToPhoneNumber());
         incident.setSource(escalationDetails.getSource());
         incident.setStatus("Escalated");
 
-//        notificationService.sendEscalationNotification(incident, escalationDetails.getEscalatedToEmail());
+        // Send SMS with detailed message
+        notificationService.sendEscalationSms(
+                escalationDetails.getEscalatedToPhoneNumber(),
+                incident
+        );
+
+        // Send email with detailed message
+        notificationService.sendEscalationEmail(
+                escalationDetails.getEscalatedToEmail(),
+                "Incident Escalation Notification",
+                incident
+        );
+
         return incidentRepository.save(incident);
     }
+
+
+
 
 
     public void deleteIncident(Long id) {
@@ -82,16 +100,26 @@ public class IncidentService {
     public List<Incident> getEscalatedIncidentsForUser(String loggedInUserEmail) {
         return incidentRepository.findByEscalatedToEmail(loggedInUserEmail);
     }
-    public List<Incident> getIncidentsByAffectedSystem(String affectedSystem) {
-        return incidentRepository.findByAffectedSystem(affectedSystem);
+    public Map<String, Long> countIncidentsByAffectedSystem() {
+        return incidentRepository.findAll().stream()
+                .collect(Collectors.groupingBy(Incident::getAffectedSystem, Collectors.counting()));
     }
 
-    public List<Incident> getIncidentsBySource(String source) {
-        return incidentRepository.findBySource(source);
+    // Get escalated incidents grouped by escalatedTo with count
+    public Map<String, List<Incident>> getEscalatedIncidentsGroupedByEscalatedTo() {
+        return incidentRepository.findAll().stream()
+                .filter(Incident::isEscalated) // Only include escalated incidents
+                .collect(Collectors.groupingBy(Incident::getEscalatedTo));
     }
 
-    public List<Incident> getIncidentsByEscalatedTo(String escalatedTo) {
-        return incidentRepository.findByEscalatedTo(escalatedTo);
+    // Get incidents grouped by source with only sources having more than one incident
+    public Map<String, List<Incident>> getIncidentsWithMultipleSources() {
+        return incidentRepository.findAll().stream()
+                .filter(incident -> incident.getSource() != null) // Exclude null sources
+                .collect(Collectors.groupingBy(Incident::getSource))
+                .entrySet().stream()
+                .filter(entry -> entry.getValue().size() > 1) // Only sources with more than one incident
+                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
     }
 
 }

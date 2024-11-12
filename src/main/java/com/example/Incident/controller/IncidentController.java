@@ -12,6 +12,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/incidents")
@@ -86,24 +87,24 @@ public class IncidentController {
         return ResponseEntity.noContent().build(); // 204 No Content
     }
 
-    @GetMapping("/by-affected-system")
+    @GetMapping("/count-by-affected-system")
     @PreAuthorize("hasAnyRole('USER')")
-    public List<Incident> getIncidentsByAffectedSystem(@RequestParam String affectedSystem) {
-        return incidentService.getIncidentsByAffectedSystem(affectedSystem);
+    public Map<String, Long> getCountByAffectedSystem() {
+        return incidentService.countIncidentsByAffectedSystem();
     }
 
-    // Endpoint to get incidents by source
-    @GetMapping("/by-source")
+    // Endpoint to get escalated incidents grouped by escalatedTo
+    @GetMapping("/escalated-grouped-by-escalated-to")
     @PreAuthorize("hasAnyRole('USER')")
-    public List<Incident> getIncidentsBySource(@RequestParam String source) {
-        return incidentService.getIncidentsBySource(source);
+    public Map<String, List<Incident>> getEscalatedIncidentsGroupedByEscalatedTo() {
+        return incidentService.getEscalatedIncidentsGroupedByEscalatedTo();
     }
 
-    // Endpoint to get incidents by escalation target
-    @GetMapping("/by-escalated-to")
+    // Endpoint to get incidents with sources that have more than one incident
+    @GetMapping("/grouped-by-source-multiple")
     @PreAuthorize("hasAnyRole('USER')")
-    public List<Incident> getIncidentsByEscalatedTo(@RequestParam String escalatedTo) {
-        return incidentService.getIncidentsByEscalatedTo(escalatedTo);
+    public Map<String, List<Incident>> getIncidentsWithMultipleSources() {
+        return incidentService.getIncidentsWithMultipleSources();
     }
 
 

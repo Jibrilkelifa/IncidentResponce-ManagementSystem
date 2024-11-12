@@ -28,6 +28,7 @@ public class Incident {
     private boolean escalated;
     private String source;
     private String escalatedToEmail;
+    private String escalatedToPhoneNumber;
 
     @OneToMany(mappedBy = "incident", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @JsonManagedReference // Manage serialization for updates

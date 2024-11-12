@@ -40,6 +40,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/auth/**").permitAll() // Allow access to auth endpoints
                         .requestMatchers("/api/incidents/**").permitAll()
                         .requestMatchers("/api/soc/**").permitAll()
+                        .requestMatchers("/api/auth/reset-password").permitAll()
                         .anyRequest().authenticated()
                 )
                 .sessionManagement(sess -> sess.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
