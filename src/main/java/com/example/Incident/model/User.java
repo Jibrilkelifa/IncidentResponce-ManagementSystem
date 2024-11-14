@@ -22,6 +22,7 @@ public class User {
     private String password;
     private String fullName;    // New field for full name
     private String jobTitle;
+    private String phoneNumber;
     private String role; // e.g., "USER", "ADMIN"
     @Column(name = "reset_token")
     private String resetToken;

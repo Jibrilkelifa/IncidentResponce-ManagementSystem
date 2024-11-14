@@ -8,10 +8,13 @@ import com.example.Incident.services.NotificationService;
 import com.example.Incident.services.jwt.JwtUtil;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
@@ -97,6 +100,12 @@ public class AuthController {
         Map<String, String> response = new HashMap<>();
         response.put("message", "Password reset link has been sent to your email.");
         return ResponseEntity.ok(response);
+    }
+    @GetMapping("/current-user")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<Optional<User>> getCurrentUser(@AuthenticationPrincipal UserDetails userDetails) {
+        Optional<User> user = userRepository.findByUsername(userDetails.getUsername());
+        return ResponseEntity.ok(user);
     }
 
     // Reset password

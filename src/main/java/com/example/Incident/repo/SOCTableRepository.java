@@ -11,4 +11,4 @@ import java.util.List;
 @Repository
 public interface SOCTableRepository extends JpaRepository<SOCTable, Long> {
 
-    SOCTable findByReportDateAndShift(LocalDateTime reportDate, String shift);}
+    SOCTable findByReportDateAndShift(LocalDate reportDate, String shift);}

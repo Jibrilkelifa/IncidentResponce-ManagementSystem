@@ -2,17 +2,21 @@ package com.example.Incident.services;
 
 import com.example.Incident.model.Incident;
 import com.example.Incident.model.User;
+import jakarta.mail.internet.MimeMessage;
+import jakarta.mail.util.ByteArrayDataSource;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
 import java.net.URI;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.util.List;
 
 @Service
 public class NotificationService {
@@ -79,20 +83,31 @@ public class NotificationService {
             System.err.println("Failed to send reset password token to " + toEmail + ": " + e.getMessage());
         }
     }
+    public void sendReportEmail(String fromEmail, List<String> toEmails, String subject, String body, byte[] attachmentData) {
+        try {
+            // Create a MimeMessage for email with attachment
+            MimeMessage message = mailSender.createMimeMessage();
 
+            MimeMessageHelper helper = new MimeMessageHelper(message, true);
+            helper.setFrom(fromEmail);
+            helper.setSubject(subject);
+            helper.setText(body);
 
-//    public void sendEscalationNotification(Incident incident, String escalatedTo) {
-//        SimpleMailMessage message = new SimpleMailMessage();
-//        message.setTo(escalatedTo);
-//        message.setSubject("Incident Escalation Notification: ID " + incident.getId());
-//        message.setText("The following incident has been escalated:\n\n" +
-//                "Incident ID: " + incident.getId() + "\n" +
-//                "Description: " + incident.getDescription() + "\n" +
-//                "Status: " + incident.getStatus() + "\n\n" +
-//                "Please review the incident as soon as possible.");
-//
-//        mailSender.send(message);
-//    }
+            // Add each email to the list of recipients
+            helper.setTo(toEmails.toArray(new String[0]));
+
+            // Create a ByteArrayDataSource to treat the byte[] as a file
+            ByteArrayDataSource dataSource = new ByteArrayDataSource(attachmentData, "application/pdf");
+            helper.addAttachment("SOC_Report.pdf", dataSource);
+
+            // Send the email
+            mailSender.send(message);
+            System.out.println("Report email sent successfully to " + String.join(", ", toEmails));
+        } catch (Exception e) {
+            System.err.println("Failed to send report email to " + String.join(", ", toEmails) + ": " + e.getMessage());
+            throw new RuntimeException("Failed to send email", e);
+        }
+    }
 
     public void sendEscalationSms(String phoneNumber, Incident incident) {
         try {

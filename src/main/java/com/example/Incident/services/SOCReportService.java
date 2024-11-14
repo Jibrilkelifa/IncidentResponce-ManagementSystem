@@ -32,7 +32,7 @@ public class SOCReportService {
     }
 
     public SOCTable createSOCReport(SOCTable socTable) {
-        socTable.setReportDate(LocalDateTime.now()); // Set the current date and time
+        socTable.setReportDate(LocalDate.now()); // Set the current date and time
 
         // Save and link each IncidentEntry to the report
         if (socTable.getIncidents() != null) {
@@ -77,7 +77,7 @@ public class SOCReportService {
             title.setAlignment(Element.ALIGN_CENTER);
             document.add(title);
 
-            document.add(new Paragraph("Date: " + report.getReportDate().toLocalDate(), headerFont));
+            document.add(new Paragraph("Date: " + report.getReportDate(), headerFont));
             document.add(new Paragraph("Shift: " + report.getShift(), headerFont));
             document.add(new Paragraph(" ")); // Spacer line
 
@@ -165,8 +165,8 @@ public class SOCReportService {
 
     public Long findReportIdByDateAndShift(String reportDateTime, String shift) {
         // Parse the input date string as LocalDateTime
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSSSSS");
-        LocalDateTime dateTime = LocalDateTime.parse(reportDateTime, formatter);
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+        LocalDate dateTime = LocalDate.parse(reportDateTime, formatter);
 
         // Fetch the report by date and shift type using LocalDateTime
         SOCTable report = socTableRepository.findByReportDateAndShift(dateTime, shift);

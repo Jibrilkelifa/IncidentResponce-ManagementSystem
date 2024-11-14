@@ -2,6 +2,7 @@ package com.example.Incident.controller;
 
 import com.example.Incident.model.IncidentEntry;
 import com.example.Incident.model.SOCTable;
+import com.example.Incident.services.NotificationService;
 import com.example.Incident.services.SOCReportService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
@@ -9,8 +10,10 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -21,6 +24,9 @@ public class SOCReportController {
 
     @Autowired
     private SOCReportService socReportService;
+
+    @Autowired
+    private NotificationService notificationService;
 
     // Endpoint to create a new SOC report
     @PostMapping("/report")
@@ -58,6 +64,31 @@ public class SOCReportController {
                 ? ResponseEntity.ok(reportId)
                 : ResponseEntity.notFound().build();
     }
+    @PostMapping("/sendReport/{reportId}")
+    @PreAuthorize("hasAnyRole('USER')")
+    public ResponseEntity<String> sendSOCReportByEmail(@PathVariable Long reportId) {
+        // Fetch the report by ID
+        SOCTable report = socReportService.getReportById(reportId);
+
+        // Generate the PDF
+        byte[] pdfData = socReportService.generateSOCReportPDF(report);
+
+        // Get the logged-in user's email
+        String senderEmail = getLoggedInUserEmail();
+
+        // List of manager and RIP emails
+        List<String> managerEmails = List.of("Iyob.Hambisa@coopbanoromiasc.com", "Leti.Tadesse@coopbankoromiasc.com", "Jibril.Kalifa@coopbankoromiasc.com");
+
+        // Send the email with the attachment to each manager email
+        try {
+            notificationService.sendReportEmail(senderEmail, managerEmails, "SOC Report", "Please find attached the SOC report.", pdfData);
+            return ResponseEntity.ok("Report sent successfully.");
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Failed to send report: " + e.getMessage());
+        }
+    }
+
+
 
 
 
@@ -74,7 +105,7 @@ public class SOCReportController {
                 ))
                 .collect(Collectors.toList());
 
-        return new SOCTable(null, LocalDateTime.now(), dto.getShift(), incidents);
+        return new SOCTable(null, LocalDate.now(), dto.getShift(), incidents);
     }
 
     private com.example.Incident.dto.SOCTableDTO convertToDTO(SOCTable report) {
@@ -87,6 +118,11 @@ public class SOCReportController {
                         incident.getRecommendedAction()))
                 .collect(Collectors.toList());
 
-        return new com.example.Incident.dto.SOCTableDTO(report.getReportDate(), report.getShift(), incidentDTOs);
+        return new com.example.Incident.dto.SOCTableDTO(report.getReportDate().atStartOfDay(), report.getShift(), incidentDTOs);
+    }
+    private String getLoggedInUserEmail() {
+        System.out.println(SecurityContextHolder.getContext().getAuthentication().getName());
+        return SecurityContextHolder.getContext().getAuthentication().getName();
+
     }
 }

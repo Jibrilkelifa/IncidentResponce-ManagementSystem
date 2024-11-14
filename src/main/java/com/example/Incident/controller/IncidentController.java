@@ -2,6 +2,8 @@ package com.example.Incident.controller;
 
 import com.example.Incident.model.Incident;
 import com.example.Incident.model.Update;
+import com.example.Incident.model.User;
+import com.example.Incident.repo.UserRepository;
 import com.example.Incident.services.IncidentService;
 import com.example.Incident.services.NotificationService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,6 +21,8 @@ import java.util.Map;
 public class IncidentController {
     @Autowired
     private IncidentService incidentService;
+    @Autowired
+    private UserRepository userRepository;
     @Autowired
     private NotificationService notificationService;
 
@@ -51,6 +55,13 @@ public class IncidentController {
         Incident updatedIncident = incidentService.escalateIncident(id, escalationDetails);
         return ResponseEntity.ok(updatedIncident);
     }
+    @GetMapping("/users")
+    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
+    public ResponseEntity<List<User>> getAllUsers() {
+        List<User> users = userRepository.findAll();
+        return ResponseEntity.ok(users);
+    }
+
     @GetMapping("/escalations")
     @PreAuthorize("hasAnyRole('USER')")
     public ResponseEntity<List<Incident>> getEscalatedIncidents() {
