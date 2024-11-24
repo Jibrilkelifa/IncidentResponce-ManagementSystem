@@ -17,20 +17,28 @@ public class Incident {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+    @Column(columnDefinition = "TEXT")
     private String description;
+    private String title;
     private String status;
     private LocalDateTime createdAt;
-    private LocalDateTime updatedAt;
     private String escalatedTo;
     private String severity;
     private String affectedSystem;
     private String escalatedBy;
     private boolean escalated;
     private String source;
+    private String assignee;
     private String escalatedToEmail;
     private String escalatedToPhoneNumber;
+    @Column(columnDefinition = "TEXT")
+    private String recommendedAction;
 
     @OneToMany(mappedBy = "incident", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @JsonManagedReference // Manage serialization for updates
     private List<Update> updates; // List of updates associated with the incident
+    @PrePersist
+    protected void onCreate() {
+        this.createdAt = LocalDateTime.now();
+    }
 }

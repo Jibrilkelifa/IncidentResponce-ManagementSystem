@@ -4,7 +4,6 @@ import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-
 @Entity
 @Data
 @NoArgsConstructor
@@ -15,13 +14,17 @@ public class IncidentEntry {
     private Long id;
 
     private String offenceName;
+
+    @Column(columnDefinition = "TEXT")
     private String rootCause;
+
     private String affectedAsset;
     private String ipAddress;
+
+    @Column(columnDefinition = "TEXT")
     private String recommendedAction;
 
-    // Add a ManyToOne relationship to SOCTable
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "soc_report_id")
-    private SOCTable report; // Reference to the associated SOC report
+    private SOCTable report;
 }

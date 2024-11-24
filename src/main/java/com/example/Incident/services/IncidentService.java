@@ -74,22 +74,42 @@ public class IncidentService {
         }
     }
     public Update addUpdate(Long incidentId, Update update) {
+        // Fetch the incident from the repository
         Incident incident = incidentRepository.findById(incidentId)
                 .orElseThrow(() -> new RuntimeException("Incident not found"));
 
-        // Update the status of the incident if a new status is provided
+        // Validate status transition
         if (update.getNewStatus() != null && !update.getNewStatus().isEmpty()) {
-            incident.setStatus(update.getNewStatus());
+            validateStatusTransition(incident.getStatus(), update.getNewStatus());
+            incident.setStatus(update.getNewStatus()); // Update the incident's status
         }
 
         // Link update to the incident
         update.setIncident(incident);
         update.setTimestamp(LocalDateTime.now()); // Set the current time
 
-        // Save the update
+        // Save the update and the incident
         incidentRepository.save(incident); // Save the updated incident first
         return updateRepository.save(update); // Then save the update
     }
+    private void validateStatusTransition(String currentStatus, String newStatus) {
+        switch (newStatus) {
+            case "Resolved":
+                if (!"Open".equals(currentStatus)) {
+                    throw new RuntimeException("Incident must be 'Open' to be marked as 'Resolved'.");
+                }
+                break;
+            case "Closed":
+                if (!"Resolved".equals(currentStatus)) {
+                    throw new RuntimeException("Incident must be 'Resolved' to be marked as 'Closed'.");
+                }
+                break;
+            default:
+                // Allow transitions to other statuses if required or throw an error for invalid statuses
+                throw new RuntimeException("Invalid status transition: " + currentStatus + " to " + newStatus);
+        }
+    }
+
 
 
     public void deleteAllIncidents() {
@@ -120,6 +140,11 @@ public class IncidentService {
                 .entrySet().stream()
                 .filter(entry -> entry.getValue().size() > 1) // Only sources with more than one incident
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+    }
+
+    public List<Incident> searchIncidents(String searchTerm) {
+        return incidentRepository.findByTitleContainingIgnoreCaseOrAssigneeContainingIgnoreCaseOrStatusContainingIgnoreCaseOrEscalatedToContainingIgnoreCase(
+                searchTerm, searchTerm, searchTerm, searchTerm);
     }
 
 }

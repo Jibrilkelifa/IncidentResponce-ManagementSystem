@@ -4,6 +4,7 @@ import com.example.Incident.model.Incident;
 import com.example.Incident.model.Update;
 import com.example.Incident.model.User;
 import com.example.Incident.repo.UserRepository;
+import com.example.Incident.services.DailyIPUpdateScheduler;
 import com.example.Incident.services.IncidentService;
 import com.example.Incident.services.NotificationService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,6 +22,9 @@ import java.util.Map;
 public class IncidentController {
     @Autowired
     private IncidentService incidentService;
+
+    @Autowired
+    private DailyIPUpdateScheduler dailyIPUpdateScheduler;
     @Autowired
     private UserRepository userRepository;
     @Autowired
@@ -39,6 +43,18 @@ public class IncidentController {
         List<Incident> incidents = incidentService.getAllIncidents();
         return ResponseEntity.ok(incidents);
 
+    }
+
+    @GetMapping("/search")
+    @PreAuthorize("hasAnyRole('USER')")
+    public ResponseEntity<List<Incident>> searchIncidents(@RequestParam(required = false) String searchTerm) {
+        List<Incident> incidents;
+        if (searchTerm != null && !searchTerm.trim().isEmpty()) {
+            incidents = incidentService.searchIncidents(searchTerm);
+        } else {
+            incidents = incidentService.getAllIncidents(); // Get all incidents if no search term
+        }
+        return ResponseEntity.ok(incidents);
     }
 
     @GetMapping("/find/{id}")
@@ -116,6 +132,12 @@ public class IncidentController {
     @PreAuthorize("hasAnyRole('USER')")
     public Map<String, List<Incident>> getIncidentsWithMultipleSources() {
         return incidentService.getIncidentsWithMultipleSources();
+    }
+    @GetMapping("/update-ip-reputations")
+    @PreAuthorize("hasAnyRole('USER')")
+    public String triggerIPUpdate() {
+        dailyIPUpdateScheduler.updateIPReputations();  // Call the method directly
+        return "IP Reputations Update Triggered!";
     }
 
 

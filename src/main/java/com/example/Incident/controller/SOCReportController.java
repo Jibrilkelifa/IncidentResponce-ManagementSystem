@@ -77,7 +77,7 @@ public class SOCReportController {
         String senderEmail = getLoggedInUserEmail();
 
         // List of manager and RIP emails
-        List<String> managerEmails = List.of("Iyob.Hambisa@coopbanoromiasc.com", "Leti.Tadesse@coopbankoromiasc.com", "Jibril.Kalifa@coopbankoromiasc.com");
+        List<String> managerEmails = List.of( "Jibril.Kalifa@coopbankoromiasc.com");
 
         // Send the email with the attachment to each manager email
         try {

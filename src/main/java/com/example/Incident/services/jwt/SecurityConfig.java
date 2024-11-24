@@ -39,6 +39,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/auth/**").permitAll() // Allow access to auth endpoints
                         .requestMatchers("/api/incidents/**").permitAll()
+                        .requestMatchers("/api/knowledge-base/**").permitAll()
                         .requestMatchers("/api/soc/**").permitAll()
                         .requestMatchers("/api/auth/reset-password").permitAll()
                         .anyRequest().authenticated()

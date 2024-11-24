@@ -15,4 +15,7 @@ public interface IncidentRepository extends JpaRepository<Incident, Long> {
     List<Incident> findBySource(String source);
 
     List<Incident> findByEscalatedTo(String escalatedTo);
+
+    List<Incident> findByTitleContainingIgnoreCaseOrAssigneeContainingIgnoreCaseOrStatusContainingIgnoreCaseOrEscalatedToContainingIgnoreCase(
+            String title, String assignee, String status, String escalatedTo);
 }
