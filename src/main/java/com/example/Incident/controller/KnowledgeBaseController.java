@@ -25,6 +25,13 @@ public class KnowledgeBaseController {
         KnowledgeBaseArticle createdArticle = knowledgeBaseService.saveArticle(article);
         return ResponseEntity.status(HttpStatus.CREATED).body(createdArticle);
     }
+    @GetMapping("/resolved-incidents-with-articles")
+    @PreAuthorize("hasAnyRole('USER')")
+    public ResponseEntity<List<KnowledgeBaseArticle>> getResolvedIncidentsWithArticles() {
+        List<KnowledgeBaseArticle> articles = knowledgeBaseService.createArticlesForResolvedIncidents();
+        return ResponseEntity.ok(articles);
+    }
+
 
     // Get all articles
     @GetMapping("/list")

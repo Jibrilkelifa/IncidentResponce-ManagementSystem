@@ -120,7 +120,7 @@ public class IncidentController {
         return incidentService.countIncidentsByAffectedSystem();
     }
 
-    // Endpoint to get escalated incidents grouped by escalatedTo
+//Endpoint to get escalated incidents grouped by escalatedTo
     @GetMapping("/escalated-grouped-by-escalated-to")
     @PreAuthorize("hasAnyRole('USER')")
     public Map<String, List<Incident>> getEscalatedIncidentsGroupedByEscalatedTo() {

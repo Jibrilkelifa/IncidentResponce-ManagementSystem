@@ -13,8 +13,8 @@ import java.util.function.Function;
 @Component
 public class JwtUtil {
 
-    private String SECRET_KEY = "your_secret_key"; // Use a stronger secret key
-
+    private String NEW_SECRET_KEY = "586E5A7234753778214125442A472D4B6150645367566B59703373357638792F"; // Use a stronger secret key
+    private final String SECRET_KEY = "old_secret_key";
     // Extract username from JWT token
     public String extractUsername(String token) {
         return extractClaim(token, Claims::getSubject);
@@ -32,15 +32,17 @@ public class JwtUtil {
                 .setSubject(username)
                 .setIssuedAt(new Date(System.currentTimeMillis()))
                 .setExpiration(new Date(System.currentTimeMillis() + 1000 * 60 * 60 * 10)) // 10 hours expiration
-                .signWith(SignatureAlgorithm.HS256, SECRET_KEY)
+                .signWith(SignatureAlgorithm.HS256, NEW_SECRET_KEY)
                 .compact();
     }
+
 
     // Validate token
     public boolean validateToken(String token, String username) {
         final String extractedUsername = extractUsername(token);
         return extractedUsername.equals(username) && !isTokenExpired(token);
     }
+
 
     // Check if the token is expired
     private boolean isTokenExpired(String token) {
@@ -53,9 +55,19 @@ public class JwtUtil {
 
     // Extract all claims from token
     private Claims extractAllClaims(String token) {
-        return Jwts.parser()
-                .setSigningKey(SECRET_KEY)
-                .parseClaimsJws(token)
-                .getBody();
+        try {
+            // Try parsing with the new secret key
+            return Jwts.parser()
+                    .setSigningKey(NEW_SECRET_KEY)
+                    .parseClaimsJws(token)
+                    .getBody();
+        } catch (Exception e) {
+            // Fallback to the old secret key
+            return Jwts.parser()
+                    .setSigningKey(SECRET_KEY)
+                    .parseClaimsJws(token)
+                    .getBody();
+        }
     }
+
 }

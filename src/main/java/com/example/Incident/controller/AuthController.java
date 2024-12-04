@@ -67,6 +67,7 @@ public class AuthController {
         // Create new user
         User user = new User();
         user.setUsername(authRequest.getUsername());
+        user.setPhoneNumber(authRequest.getPhoneNumber());
         user.setPassword(passwordEncoder.encode(authRequest.getPassword()));
         user.setRole("USER"); // Set default role
         user.setFullName(authRequest.getFullName()); // Set full name
@@ -102,12 +103,41 @@ public class AuthController {
         return ResponseEntity.ok(response);
     }
     @GetMapping("/current-user")
-    @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<Optional<User>> getCurrentUser(@AuthenticationPrincipal UserDetails userDetails) {
+   @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<Map<String, String>> getCurrentUser(@AuthenticationPrincipal UserDetails userDetails) {
+        // If userDetails is null, return an error message
+        if (userDetails == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("message", "User not authenticated or token expired"));
+        }
+
         Optional<User> user = userRepository.findByUsername(userDetails.getUsername());
-        return ResponseEntity.ok(user);
+        if (user.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Map.of("message", "User not found"));
+        }
+
+        return ResponseEntity.ok(Map.of("username", user.get().getUsername(), "fullName", user.get().getFullName()));
     }
 
+    @GetMapping("/validate-token")
+    public ResponseEntity<Map<String, String>> validateToken(@RequestHeader("Authorization") String authHeader) {
+        // Extract token from the Authorization header
+        String token = authHeader.replace("Bearer ", "");
+
+        // Check if token is valid
+        boolean isValid = jwtUtil.validateToken(token, jwtUtil.extractUsername(token));
+
+        // Prepare response message
+        Map<String, String> response = new HashMap<>();
+        if (isValid) {
+            response.put("message", "Token is valid");
+            return ResponseEntity.ok(response);
+        } else {
+            response.put("message", "Token is invalid or expired");
+            return ResponseEntity.status(401).body(response);
+        }
+    }
     // Reset password
     @PostMapping("/reset-password")
     public ResponseEntity<String> resetPassword(@RequestBody ResetPasswordRequest request) {

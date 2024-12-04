@@ -38,9 +38,9 @@ public class NotificationService {
                     incident.getDescription(),
                     incident.getStatus(),
                     incident.getSeverity(),
-                    incident.getAffectedSystem(),
+                    incident.getAffectedSystems(),
                     incident.getEscalatedBy(),
-                    incident.getSource(),
+                    incident.getSources(),
                     incident.getCreatedAt()
             );
 

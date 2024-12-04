@@ -16,11 +16,15 @@ public class KnowledgeBaseArticle {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-
-    private String title;  // Article title
-    private String content;  // Content of the article
-    private String category;  // Article category (e.g., "Guidelines", "Malware Procedures")
-    private String tags;  // Optional tags (e.g., "critical", "high")
+    @Column(length = 500)
+    private String title;
+    @Column(columnDefinition = "TEXT")
+    private String content;
+    private String category;
+    private String tags;
+    @OneToOne // One knowledge base article per incident
+    @JoinColumn(name = "incident_id", unique = true)
+    private Incident incident;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 

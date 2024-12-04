@@ -1,5 +1,7 @@
 package com.example.Incident.services;
 import com.example.Incident.model.Incident;
+import com.example.Incident.model.IncidentWithEscalatedTo;
+import com.example.Incident.model.IncidentWithSource;
 import com.example.Incident.model.Update;
 import com.example.Incident.repo.IncidentRepository;
 import com.example.Incident.repo.UpdateRepository;
@@ -33,27 +35,35 @@ public class IncidentService {
                 .orElseThrow(() -> new RuntimeException("Incident not found"));
 
         incident.setEscalated(true);
-        incident.setEscalatedTo(escalationDetails.getEscalatedTo());
-        incident.setEscalatedToEmail(escalationDetails.getEscalatedToEmail());
-        incident.setEscalatedToPhoneNumber(escalationDetails.getEscalatedToPhoneNumber());
-        incident.setSource(escalationDetails.getSource());
         incident.setStatus("Escalated");
 
-        // Send SMS with detailed message
-        notificationService.sendEscalationSms(
-                escalationDetails.getEscalatedToPhoneNumber(),
-                incident
-        );
+        // Handle multiple users
+        incident.setEscalatedTo(escalationDetails.getEscalatedTo());
+        incident.setEscalatedToEmails(escalationDetails.getEscalatedToEmails());
+        incident.setEscalatedToPhones(escalationDetails.getEscalatedToPhones());
 
-        // Send email with detailed message
-        notificationService.sendEscalationEmail(
-                escalationDetails.getEscalatedToEmail(),
-                "Incident Escalation Notification",
-                incident
-        );
+        // Ensure there are emails and phones to send notifications to
+        if (escalationDetails.getEscalatedToEmails() != null && !escalationDetails.getEscalatedToEmails().isEmpty() &&
+                escalationDetails.getEscalatedToPhones() != null && !escalationDetails.getEscalatedToPhones().isEmpty()) {
+
+            // Send notifications to each selected user
+            for (int i = 0; i < escalationDetails.getEscalatedToEmails().size(); i++) {
+                String email = escalationDetails.getEscalatedToEmails().get(i);
+                String phone = escalationDetails.getEscalatedToPhones().get(i);
+
+                // Ensure that both email and phone exist before sending notifications
+                if (email != null && !email.isEmpty() && phone != null && !phone.isEmpty()) {
+                    notificationService.sendEscalationSms(phone, incident);
+                    notificationService.sendEscalationEmail(email, "Incident Escalation Notification", incident);
+                }
+            }
+        } else {
+            throw new RuntimeException("No valid users selected for escalation");
+        }
 
         return incidentRepository.save(incident);
     }
+
 
 
 
@@ -80,7 +90,6 @@ public class IncidentService {
 
         // Validate status transition
         if (update.getNewStatus() != null && !update.getNewStatus().isEmpty()) {
-            validateStatusTransition(incident.getStatus(), update.getNewStatus());
             incident.setStatus(update.getNewStatus()); // Update the incident's status
         }
 
@@ -92,23 +101,7 @@ public class IncidentService {
         incidentRepository.save(incident); // Save the updated incident first
         return updateRepository.save(update); // Then save the update
     }
-    private void validateStatusTransition(String currentStatus, String newStatus) {
-        switch (newStatus) {
-            case "Resolved":
-                if (!"Open".equals(currentStatus)) {
-                    throw new RuntimeException("Incident must be 'Open' to be marked as 'Resolved'.");
-                }
-                break;
-            case "Closed":
-                if (!"Resolved".equals(currentStatus)) {
-                    throw new RuntimeException("Incident must be 'Resolved' to be marked as 'Closed'.");
-                }
-                break;
-            default:
-                // Allow transitions to other statuses if required or throw an error for invalid statuses
-                throw new RuntimeException("Invalid status transition: " + currentStatus + " to " + newStatus);
-        }
-    }
+
 
 
 
@@ -118,27 +111,37 @@ public class IncidentService {
 
 
     public List<Incident> getEscalatedIncidentsForUser(String loggedInUserEmail) {
-        return incidentRepository.findByEscalatedToEmail(loggedInUserEmail);
+        // This method assumes you have the correct repository query for 'findByEscalatedToEmail'
+        return incidentRepository.findByEscalatedToEmailsContaining(loggedInUserEmail);
     }
+
     public Map<String, Long> countIncidentsByAffectedSystem() {
         return incidentRepository.findAll().stream()
-                .collect(Collectors.groupingBy(Incident::getAffectedSystem, Collectors.counting()));
+                .flatMap(incident -> incident.getAffectedSystems().stream()) // Flatten the list of affectedSystems
+                .collect(Collectors.groupingBy(system -> system, Collectors.counting())); // Group by each affectedSystem
     }
 
-    // Get escalated incidents grouped by escalatedTo with count
-    public Map<String, List<Incident>> getEscalatedIncidentsGroupedByEscalatedTo() {
-        return incidentRepository.findAll().stream()
-                .filter(Incident::isEscalated) // Only include escalated incidents
-                .collect(Collectors.groupingBy(Incident::getEscalatedTo));
-    }
 
-    // Get incidents grouped by source with only sources having more than one incident
+//Get escalated incidents grouped by escalatedTo with count
+public Map<String, List<Incident>> getEscalatedIncidentsGroupedByEscalatedTo() {
+    return incidentRepository.findAll().stream()
+            .filter(Incident::isEscalated) // Only include escalated incidents
+            .flatMap(incident -> incident.getEscalatedTo().stream() // Flatten the list of escalatedTo
+                    .map(escalatedTo -> new IncidentWithEscalatedTo(incident, escalatedTo)))
+            .collect(Collectors.groupingBy(IncidentWithEscalatedTo::getEscalatedTo,
+                    Collectors.mapping(IncidentWithEscalatedTo::getIncident, Collectors.toList())));
+}
+
+    // Get incidents grouped by each 'source' (for sources having more than one incident)
     public Map<String, List<Incident>> getIncidentsWithMultipleSources() {
         return incidentRepository.findAll().stream()
-                .filter(incident -> incident.getSource() != null) // Exclude null sources
-                .collect(Collectors.groupingBy(Incident::getSource))
+                .filter(incident -> incident.getSources() != null) // Exclude incidents with null sources
+                .flatMap(incident -> incident.getSources().stream() // Flatten the sources list
+                        .map(source -> new IncidentWithSource(incident, source)))
+                .collect(Collectors.groupingBy(IncidentWithSource::getSource,
+                        Collectors.mapping(IncidentWithSource::getIncident, Collectors.toList())))
                 .entrySet().stream()
-                .filter(entry -> entry.getValue().size() > 1) // Only sources with more than one incident
+                .filter(entry -> entry.getValue().size() > 1) // Only include sources with more than one incident
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
     }
 

@@ -1,4 +1,4 @@
-package com.example.Incident.dto;
+package com.example.Incident.model;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
