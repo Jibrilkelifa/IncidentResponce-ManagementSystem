@@ -29,6 +29,8 @@ public class Incident {
     private String title;
     private String status;
     private LocalDateTime createdAt;
+    @Column(columnDefinition = "TEXT")
+    private String escalationMessage;
 
     @ElementCollection
     @CollectionTable(name = "incident_escalated_to", joinColumns = @JoinColumn(name = "incident_id"))

@@ -60,9 +60,38 @@ public class SchedulingController {
     @PreAuthorize("hasAnyRole('USER')")
     public ResponseEntity<Void> deleteAllSchedules() {
         schedulingService.deleteAllSchedules();
+
         return ResponseEntity.noContent().build();
     }
-//    @GetMapping("/user-hours")
+    @GetMapping("/current-shift")
+    @PreAuthorize("hasAnyRole('USER')")
+    public ResponseEntity<Map<String, String>> getCurrentShift() {
+        LocalDate today = LocalDate.now();  // Get today's date
+        String currentShift = schedulingService.getCurrentShiftForDate(today);  // Get current shift for today
+
+        Map<String, String> response = new HashMap<>();
+        response.put("shift", currentShift);
+
+        return ResponseEntity.ok(response); // Return the current shift as JSON
+    }
+
+    @GetMapping("/next-shift")
+    @PreAuthorize("hasAnyRole('USER')")
+    public ResponseEntity<Map<String, String>> getNextShift() {
+        LocalDate today = LocalDate.now();  // Get today's date
+        String nextShift = schedulingService.getNextShiftForDate(today);  // Get next shift for today
+
+        Map<String, String> response = new HashMap<>();
+        response.put("shift", nextShift);
+
+        return ResponseEntity.ok(response); // Return the next shift as JSON
+    }
+
+
+
+
+
+    //    @GetMapping("/user-hours")
 //    @PreAuthorize("hasAnyRole('SMS_ADMIN','SMS_USER')")
 //    public ResponseEntity<List<UserHoursDto>> getUserWeeklyHours(
 //            @RequestParam("startDate") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
@@ -111,9 +140,7 @@ public ResponseEntity<List<UserHoursDto>> getUserWeeklyHours(
     }
 
 
-// @Scheduled(cron = "0 0 8 * * ?", zone = "Africa/Addis_Ababa")
- @Scheduled(cron = "0 16 5 * * ?", zone = "Africa/Addis_Ababa")
-
+@Scheduled(cron = "0 30 7 * * ?", zone = "Africa/Addis_Ababa")
  public void sendNotificationToAllAnalysts() {
        LocalDate todaytDay = LocalDate.now();
 

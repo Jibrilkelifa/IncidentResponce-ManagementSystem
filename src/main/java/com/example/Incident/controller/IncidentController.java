@@ -14,6 +14,8 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.DayOfWeek;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 
@@ -35,6 +37,38 @@ public class IncidentController {
         Incident createdIncident = incidentService.createIncident(incident);
         return ResponseEntity.status(HttpStatus.CREATED).body(createdIncident);
 
+    }
+    @PutMapping("/update/{id}")
+    @PreAuthorize("hasAnyRole('USER')")
+    public ResponseEntity<Incident> updateIncidentFields(
+            @PathVariable Long id,
+            @RequestBody Map<String, Object> updatedFields) {
+        Incident incident = incidentService.getIncidentById(id);
+
+        // Update specific fields
+        if (updatedFields.containsKey("title")) {
+            incident.setTitle((String) updatedFields.get("title"));
+        }
+        if (updatedFields.containsKey("recommendedAction")) {
+            incident.setRecommendedAction((String) updatedFields.get("recommendedAction"));
+        }
+        if (updatedFields.containsKey("description")) {
+            incident.setDescription((String) updatedFields.get("description"));
+        }
+        if (updatedFields.containsKey("affectedSystems")) {
+            incident.setAffectedSystems((List<String>) updatedFields.get("affectedSystems"));
+        }
+        if (updatedFields.containsKey("sources")) {
+            incident.setSources((List<String>) updatedFields.get("sources"));
+        }
+        if (updatedFields.containsKey("severity")) {
+            incident.setSeverity((String) updatedFields.get("severity"));
+        }
+
+        // Save updated incident
+        Incident updatedIncident = incidentService.saveIncident(incident);
+
+        return ResponseEntity.ok(updatedIncident);
     }
 
     @GetMapping("/list/all")
@@ -139,6 +173,44 @@ public class IncidentController {
         dailyIPUpdateScheduler.updateIPReputations();  // Call the method directly
         return "IP Reputations Update Triggered!";
     }
+    // Inside IncidentController.java
+
+    @GetMapping("/trends")
+    @PreAuthorize("hasAnyRole('USER')")
+    public ResponseEntity<Map<String, Integer>> getIncidentTrend() {
+        Map<String, Integer> trendData = incidentService.getIncidentTrendData();
+        return ResponseEntity.ok(trendData);
+    }
+
+    @GetMapping("/today")
+    @PreAuthorize("hasAnyRole('USER')")
+    public ResponseEntity<List<Incident>> getTodaysIncidents() {
+        LocalDate today = LocalDate.now();
+        List<Incident> incidents = incidentService.getIncidentsByDateRange(today, today);
+        return ResponseEntity.ok(incidents);
+    }
+
+    @GetMapping("/week")
+    @PreAuthorize("hasAnyRole('USER')")
+    public ResponseEntity<List<Incident>> getThisWeeksIncidents() {
+        LocalDate startOfWeek = LocalDate.now().with(DayOfWeek.MONDAY); // Get the start of the week
+        LocalDate endOfWeek = LocalDate.now().with(DayOfWeek.SUNDAY);  // Get the end of the week
+        List<Incident> incidents = incidentService.getIncidentsByDateRange(startOfWeek, endOfWeek);
+        return ResponseEntity.ok(incidents);
+    }
+
+    @GetMapping("/month")
+    @PreAuthorize("hasAnyRole('USER')")
+    public ResponseEntity<List<Incident>> getThisMonthsIncidents() {
+        LocalDate startOfMonth = LocalDate.now().withDayOfMonth(1); // Get the first day of the month
+        LocalDate endOfMonth = LocalDate.now().withDayOfMonth(LocalDate.now().lengthOfMonth()); // Get the last day of the month
+        List<Incident> incidents = incidentService.getIncidentsByDateRange(startOfMonth, endOfMonth);
+        return ResponseEntity.ok(incidents);
+    }
+
+
+
+
 
 
 }

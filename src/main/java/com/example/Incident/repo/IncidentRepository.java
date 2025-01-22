@@ -6,7 +6,9 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 
 @Repository
 public interface IncidentRepository extends JpaRepository<Incident, Long> {
@@ -21,6 +23,14 @@ public interface IncidentRepository extends JpaRepository<Incident, Long> {
 
     List<Incident> findByEscalatedTo(String escalatedTo);
 
-    List<Incident> findByTitleContainingIgnoreCaseOrAssigneeContainingIgnoreCaseOrStatusContainingIgnoreCaseOrEscalatedToContainingIgnoreCase(
-            String title, String assignee, String status, String escalatedTo);
+//    List<Incident> findByTitleContainingIgnoreCaseOrAssigneeContainingIgnoreCaseOrStatusContainingIgnoreCaseOrEscalatedToContainingIgnoreCase(
+//            String title, String assignee, String status, String escalatedTo);
+
+    @Query("SELECT DATE(i.createdAt) AS date, COUNT(i) AS count FROM Incident i GROUP BY DATE(i.createdAt) ORDER BY date ASC")
+    List<Object[]> groupIncidentsByDate();
+
+    List<Incident> findByCreatedAtBetween(LocalDateTime localDateTime, LocalDateTime localDateTime1);
+
+
+    List<Incident> findByTitleContainingIgnoreCaseOrAssigneeContainingIgnoreCaseOrStatusContainingIgnoreCaseOrEscalatedToContainingIgnoreCaseOrSourcesContainingIgnoreCaseOrAffectedSystemsContainingIgnoreCase(String searchTerm, String searchTerm1, String searchTerm2, String searchTerm3, String searchTerm4, String searchTerm5);
 }

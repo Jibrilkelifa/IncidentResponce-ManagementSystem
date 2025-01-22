@@ -217,6 +217,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.DayOfWeek;
 import java.time.LocalDate;
+import java.time.LocalTime;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -339,6 +340,7 @@ public class SchedulingService {
                 return;
             }
         }
+
 
 
         // Filter available users
@@ -467,6 +469,54 @@ public class SchedulingService {
             }
         }
     }
+    public String getCurrentShiftForDate(LocalDate date) {
+        List<Schedule> schedules = scheduleRepository.findByDate(date);
+        LocalTime currentTime = LocalTime.now();
+
+        String currentShiftName = getShiftNameByTime(currentTime);
+        return schedules.stream()
+                .filter(schedule -> schedule.getShift() != null && schedule.getShift().getName().equals(currentShiftName))
+                .map(schedule -> schedule.getUser().getName())
+                .findFirst()
+                .orElse("No Analyst on Duty");
+    }
+
+    public String getNextShiftForDate(LocalDate date) {
+        List<Schedule> schedules = scheduleRepository.findByDate(date);
+        LocalTime currentTime = LocalTime.now();
+
+        String nextShiftName = getNextShiftNameByTime(currentTime);
+        return schedules.stream()
+                .filter(schedule -> schedule.getShift() != null && schedule.getShift().getName().equals(nextShiftName))
+                .map(schedule -> schedule.getUser().getName())
+                .findFirst()
+                .orElse("No Analyst Assigned");
+    }
+
+    private String getShiftNameByTime(LocalTime time) {
+        // Adjusted times based on your shift schedule
+        if (time.isAfter(LocalTime.of(6, 0)) && time.isBefore(LocalTime.of(14, 0))) {
+            return "Shift 1";  // 6:00 AM to 2:00 PM
+        } else if (time.isAfter(LocalTime.of(14, 0)) && time.isBefore(LocalTime.of(22, 0))) {
+            return "Shift 2";  // 2:00 PM to 10:00 PM
+        } else {
+            return "Shift 3";  // 10:00 PM to 6:00 AM
+        }
+    }
+
+    private String getNextShiftNameByTime(LocalTime time) {
+        // Adjusted times based on your shift schedule
+        if (time.isAfter(LocalTime.of(6, 0)) && time.isBefore(LocalTime.of(14, 0))) {
+            return "Shift 2";  // Next shift after Shift 1: 2:00 PM to 10:00 PM
+        } else if (time.isAfter(LocalTime.of(14, 0)) && time.isBefore(LocalTime.of(22, 0))) {
+            return "Shift 3";  // Next shift after Shift 2: 10:00 PM to 6:00 AM
+        } else {
+            return "Shift 1";  // Next shift after Shift 3: 6:00 AM to 2:00 PM
+        }
+    }
+
+
+
 
     private boolean isAlreadyScheduled(Userr user, LocalDate date) {
         return scheduleRepository.existsByUserAndDate(user, date);

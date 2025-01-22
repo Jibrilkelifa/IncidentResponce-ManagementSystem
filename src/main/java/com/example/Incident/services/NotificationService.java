@@ -76,6 +76,7 @@ public class NotificationService {
             message.setSubject(subject);
             message.setText(emailBody);
 
+
             // Send email
             mailSender.send(message);
             System.out.println("Reset password token sent successfully to " + toEmail);
@@ -85,7 +86,7 @@ public class NotificationService {
     }
     public void sendReportEmail(String fromEmail, List<String> toEmails, String subject, String body, byte[] attachmentData) {
         try {
-            // Create a MimeMessage for email with attachment
+
             MimeMessage message = mailSender.createMimeMessage();
 
             MimeMessageHelper helper = new MimeMessageHelper(message, true);

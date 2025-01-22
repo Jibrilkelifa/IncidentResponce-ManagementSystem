@@ -8,10 +8,11 @@ import com.example.Incident.repo.UpdateRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.time.DayOfWeek;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.time.format.DateTimeFormatter;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -39,6 +40,7 @@ public class IncidentService {
 
         // Handle multiple users
         incident.setEscalatedTo(escalationDetails.getEscalatedTo());
+        incident.setEscalationMessage(escalationDetails.getEscalationMessage());
         incident.setEscalatedToEmails(escalationDetails.getEscalatedToEmails());
         incident.setEscalatedToPhones(escalationDetails.getEscalatedToPhones());
 
@@ -75,6 +77,10 @@ public class IncidentService {
         }
         incidentRepository.deleteById(id);
     }
+    public List<Incident> getIncidentsByDateRange(LocalDate startDate, LocalDate endDate) {
+        return incidentRepository.findByCreatedAtBetween(startDate.atStartOfDay(), endDate.atTime(23, 59, 59));
+    }
+
     public Incident getIncidentById(Long id) {
         Optional<Incident> incident = incidentRepository.findById(id);
         if (incident.isPresent()) {
@@ -146,8 +152,25 @@ public Map<String, List<Incident>> getEscalatedIncidentsGroupedByEscalatedTo() {
     }
 
     public List<Incident> searchIncidents(String searchTerm) {
-        return incidentRepository.findByTitleContainingIgnoreCaseOrAssigneeContainingIgnoreCaseOrStatusContainingIgnoreCaseOrEscalatedToContainingIgnoreCase(
-                searchTerm, searchTerm, searchTerm, searchTerm);
+        return incidentRepository.findByTitleContainingIgnoreCaseOrAssigneeContainingIgnoreCaseOrStatusContainingIgnoreCaseOrEscalatedToContainingIgnoreCaseOrSourcesContainingIgnoreCaseOrAffectedSystemsContainingIgnoreCase(
+                searchTerm, searchTerm, searchTerm, searchTerm, searchTerm, searchTerm);
     }
 
+
+    public Map<String, Integer> getIncidentTrendData() {
+        List<Object[]> results = incidentRepository.groupIncidentsByDate();
+        Map<String, Integer> trendData = new LinkedHashMap<>();
+        DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+
+        for (Object[] result : results) {
+            LocalDate date = LocalDate.parse(result[0].toString()); // Parse the date
+            Integer count = ((Number) result[1]).intValue(); // Count as integer
+            trendData.put(date.format(dateFormatter), count); // Format date as "YYYY-MM-DD"
+        }
+        return trendData;
+    }
+
+    public Incident saveIncident(Incident incident) {
+        return incidentRepository.save(incident);
+    }
 }
