@@ -35,7 +35,7 @@ public class Incident {
     @ElementCollection
     @CollectionTable(name = "incident_escalated_to", joinColumns = @JoinColumn(name = "incident_id"))
     @Column(name = "escalated_to")
-    private List<String> escalatedTo = new ArrayList<>(); // Initialize as an empty list
+    private List<String> escalatedTo = new ArrayList<>();
 
     private String severity;
     @ElementCollection

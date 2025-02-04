@@ -154,7 +154,7 @@ public ResponseEntity<List<UserHoursDto>> getUserWeeklyHours(
         String message = createScheduleMessage(schedules);
 
 
-        List<String> phoneNumbers = Arrays.asList("0912357931","0942094473","0910084446");
+        List<String> phoneNumbers = Arrays.asList("0912357931","0942094473","0910084446","0937673740");
 
 
         RestTemplate restTemplate = new RestTemplate();
