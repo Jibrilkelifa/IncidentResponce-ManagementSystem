@@ -19,25 +19,25 @@ public class NmapScanService {
         this.nmapScanRepository = nmapScanRepository;
     }
 
-    public NmapScan startScan(String target, String scanType) {
+    public NmapScan startScan(String target, String scanType, String zombieHost) {
         NmapScan scan = new NmapScan(target, scanType);
         scan.setStatus("running");
         scan = nmapScanRepository.save(scan);
 
         final Long scanId = scan.getId();
 
-        // Run Nmap scan asynchronously (to avoid blocking API call)
-        new Thread(() -> executeNmapScan(scanId, target, scanType)).start();
+        // Run the Nmap scan asynchronously
+        new Thread(() -> executeNmapScan(scanId, target, scanType, zombieHost)).start();
 
         return scan;
     }
 
-    private void executeNmapScan(Long scanId, String target, String scanType) {
+    private void executeNmapScan(Long scanId, String target, String scanType, String zombieHost) {
         Optional<NmapScan> scanOpt = nmapScanRepository.findById(scanId);
         if (scanOpt.isEmpty()) return;
 
         NmapScan scan = scanOpt.get();
-        String command = buildNmapCommand(target, scanType);
+        String command = buildNmapCommand(target, scanType, zombieHost);
 
         try {
             Process process = Runtime.getRuntime().exec(command);
@@ -62,11 +62,27 @@ public class NmapScanService {
         nmapScanRepository.save(scan);
     }
 
-    private String buildNmapCommand(String target, String scanType) {
+    private String buildNmapCommand(String target, String scanType, String zombieHost) {
         return switch (scanType.toLowerCase()) {
-            case "quick" -> "nmap -F " + target;
-            case "detailed" -> "nmap -A " + target;
-            case "ports" -> "nmap -p- " + target;
+            case "ping_sweep" -> "nmap -sn " + target;
+            case "tcp_connect" -> "nmap -sT " + target;
+            case "syn_scan" -> "nmap -sS " + target;
+            case "udp_scan" -> "nmap -sU " + target;
+            case "service_version" -> "nmap -sV " + target;
+            case "os_detection" -> "nmap -O " + target;
+            case "idle_scan" -> "nmap -sI " + zombieHost + " " + target; // Requires zombie host
+
+            // **New predefined scan types**
+            case "intense_scan" -> "nmap -T4 -A -v " + target;
+            case "intense_scan_udp" -> "nmap -sS -sU -T4 -A -v " + target;
+            case "intense_all_tcp" -> "nmap -p 1-65535 -T4 -A -v " + target;
+            case "intense_no_ping" -> "nmap -T4 -A -v -Pn " + target;
+            case "ping_scan" -> "nmap -sn " + target;
+            case "quick_scan" -> "nmap -T4 -F " + target;
+            case "quick_scan_plus" -> "nmap -sV -T4 -O -F --version-light " + target;
+            case "quick_traceroute" -> "nmap -sn --traceroute " + target;
+            case "regular_scan" -> "nmap " + target;
+            case "slow_comprehensive" -> "nmap -sS -sU -T4 -A -v -p 1-65535 " + target;
             default -> "nmap " + target;
         };
     }
