@@ -11,17 +11,16 @@ import java.time.LocalDateTime;
 @Entity
 @AllArgsConstructor
 @NoArgsConstructor
-@Table(name = "grafana_alerts")
-public class GrafanaAlert {
+@Table(name = "alerts")
+public class Alert {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private String state;  // "firing" or "resolved"
     private String alertName;
-    private String severity;
-    private String description;
-    private String value;
-    private LocalDateTime activeAt;
-    private LocalDateTime createdAt = LocalDateTime.now();
+    private String host;
+    private String state;
+    private String activeAt;
+    private String grafanaFolder;
+    private String source;
 }
