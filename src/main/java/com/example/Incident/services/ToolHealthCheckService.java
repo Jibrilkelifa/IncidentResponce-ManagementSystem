@@ -3,6 +3,7 @@ package com.example.Incident.services;
 import com.example.Incident.model.ToolCheckItem;
 import com.example.Incident.model.ToolHealthCheckDTO;
 import com.example.Incident.model.ToolHealthCheckSession;
+import com.example.Incident.repo.ToolHealthCheckSessionRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
