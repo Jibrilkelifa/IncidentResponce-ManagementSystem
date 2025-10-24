@@ -39,6 +39,7 @@ public class SecurityConfig {
                 .cors(cors -> cors.configurationSource(corsConfigurationSource())) // Use the CORS configuration
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/auth/**").permitAll()
+                        .requestMatchers("/api/incidents/metrics/**").permitAll()
                         .requestMatchers("/api/incidents/**").authenticated()
                         .requestMatchers("/api/knowledge-base/**").authenticated()
                         .anyRequest().authenticated()
@@ -54,7 +55,7 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
         configuration.setAllowCredentials(true);
-        configuration.setAllowedOrigins(Arrays.asList("http://irsm.coopbankoromiasc.com", "http://localhost:4200"));
+        configuration.setAllowedOrigins(Arrays.asList( "https://adminportal.coopbankoromiasc.com","https://irsm.coopbankoromiasc.com","http://irsm.coopbankoromiasc.com","https://10.16.0.32","http://localhost:4200","https://localhost:8443"));
         configuration.setAllowedHeaders(Arrays.asList(
                 "Origin", "Access-Control-Allow-Origin", "Content-Type", "Accept", "Authorization",
                 "Access-Control-Request-Method", "Access-Control-Request-Headers"));

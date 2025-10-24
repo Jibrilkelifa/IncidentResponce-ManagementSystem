@@ -16,6 +16,7 @@ public interface IncidentRepository extends JpaRepository<Incident, Long> {
     List<Incident> findResolvedIncidents();
 
     List<Incident> findByEscalatedToEmailsContaining(String email);
+
     @Query("SELECT i FROM Incident i WHERE :affectedSystem MEMBER OF i.affectedSystems")
     List<Incident> findByAffectedSystem(@Param("affectedSystem") String affectedSystem);
 
@@ -32,5 +33,14 @@ public interface IncidentRepository extends JpaRepository<Incident, Long> {
     List<Incident> findByCreatedAtBetween(LocalDateTime localDateTime, LocalDateTime localDateTime1);
 
 
-    List<Incident> findByTitleContainingIgnoreCaseOrAssigneeContainingIgnoreCaseOrStatusContainingIgnoreCaseOrEscalatedToContainingIgnoreCaseOrSourcesContainingIgnoreCaseOrAffectedSystemsContainingIgnoreCase(String searchTerm, String searchTerm1, String searchTerm2, String searchTerm3, String searchTerm4, String searchTerm5);
+    List<Incident> findByTitleContainingIgnoreCaseOrAssigneeContainingIgnoreCaseOrStatusContainingIgnoreCaseOrSeverityContainingIgnoreCaseOrEscalatedToContainingIgnoreCaseOrSourcesContainingIgnoreCaseOrAffectedSystemsContainingIgnoreCase(String searchTerm, String searchTerm1, String searchTerm2, String searchTerm3, String searchTerm4, String searchTerm5,String searchTerm56 );
+    @Query("SELECT COUNT(i) FROM Incident i WHERE i.status = 'Resolved'")
+    long countResolvedIncidents();
+
+    @Query("SELECT COUNT(i) FROM Incident i WHERE i.status <> 'Resolved'")
+    long countOpenIncidents();
+
+    @Query("SELECT COUNT(i) FROM Incident i WHERE i.severity IN :severities")
+    long countBySeverityIn(@Param("severities") List<String> severities);
+
 }

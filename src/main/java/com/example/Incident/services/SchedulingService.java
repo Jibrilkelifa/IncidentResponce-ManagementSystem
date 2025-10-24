@@ -218,6 +218,7 @@ import org.springframework.stereotype.Service;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.time.temporal.ChronoUnit;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -689,7 +690,31 @@ public class SchedulingService {
                 .mapToObj(i -> date.minusWeeks(i).with(DayOfWeek.SUNDAY)) // Use 'i' correctly here
                 .collect(Collectors.toList());
     }
+    public void repeatSchedule(LocalDate oldStart, LocalDate oldEnd, LocalDate newStart) {
+        List<Schedule> oldSchedules = scheduleRepository.findByDateBetween(oldStart, oldEnd);
+        long offset = ChronoUnit.DAYS.between(oldStart, newStart);
 
+        for (Schedule oldSchedule : oldSchedules) {
+            LocalDate newDate = oldSchedule.getDate().plusDays(offset);
+
+            // Skip if schedule already exists for same user, shift, and date
+            boolean exists = scheduleRepository.existsByUserAndDateAndShift(
+                    oldSchedule.getUser(), newDate, oldSchedule.getShift()
+            );
+            if (exists) {
+                continue;
+            }
+
+            Schedule newSchedule = new Schedule(
+                    oldSchedule.getUser(),
+                    oldSchedule.getShift(),
+                    newDate,
+                    oldSchedule.getType()
+            );
+            newSchedule.setHours(oldSchedule.getHours()); // preserve exact hours
+            scheduleRepository.save(newSchedule);
+        }
+    }
 
 
 }

@@ -5,9 +5,14 @@ import com.example.Incident.model.IncidentWithSource;
 import com.example.Incident.model.Update;
 import com.example.Incident.repo.IncidentRepository;
 import com.example.Incident.repo.UpdateRepository;
+import org.apache.poi.ss.usermodel.*;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -25,6 +30,8 @@ public class IncidentService {
    private NotificationService notificationService;
 
     public Incident createIncident(Incident incident) {
+        incident.setTitle(incident.getCategory() + ":" + incident.getSubcategory());
+
         return incidentRepository.save(incident);
     }
 
@@ -152,8 +159,8 @@ public Map<String, List<Incident>> getEscalatedIncidentsGroupedByEscalatedTo() {
     }
 
     public List<Incident> searchIncidents(String searchTerm) {
-        return incidentRepository.findByTitleContainingIgnoreCaseOrAssigneeContainingIgnoreCaseOrStatusContainingIgnoreCaseOrEscalatedToContainingIgnoreCaseOrSourcesContainingIgnoreCaseOrAffectedSystemsContainingIgnoreCase(
-                searchTerm, searchTerm, searchTerm, searchTerm, searchTerm, searchTerm);
+        return incidentRepository.findByTitleContainingIgnoreCaseOrAssigneeContainingIgnoreCaseOrStatusContainingIgnoreCaseOrSeverityContainingIgnoreCaseOrEscalatedToContainingIgnoreCaseOrSourcesContainingIgnoreCaseOrAffectedSystemsContainingIgnoreCase(
+                searchTerm, searchTerm, searchTerm, searchTerm, searchTerm, searchTerm,searchTerm);
     }
 
 
@@ -173,4 +180,88 @@ public Map<String, List<Incident>> getEscalatedIncidentsGroupedByEscalatedTo() {
     public Incident saveIncident(Incident incident) {
         return incidentRepository.save(incident);
     }
+
+
+    public ByteArrayInputStream exportIncidents(LocalDateTime from, LocalDateTime to) {
+        List<Incident> incidents = incidentRepository.findByCreatedAtBetween(from, to);
+        if (incidents.isEmpty()) {
+            throw new RuntimeException("No incidents found for the given date range.");
+        }
+
+        try (Workbook workbook = new XSSFWorkbook(); ByteArrayOutputStream out = new ByteArrayOutputStream()) {
+            Sheet sheet = workbook.createSheet("Incidents");
+
+            // Define header row
+            String[] headers = {"ID", "Title", "Description", "Severity", "Status", "Created At",
+                    "Recommended Action", "Escalation Message", "Escalated By",
+                    "Escalated", "Assignee", "Sources", "Affected Systems", "Escalated To",
+                    "Escalated Emails", "Escalated Phones"};
+
+            Row headerRow = sheet.createRow(0);
+            for (int i = 0; i < headers.length; i++) {
+                Cell cell = headerRow.createCell(i);
+                cell.setCellValue(headers[i]);
+                cell.setCellStyle(createHeaderStyle(workbook));
+            }
+
+            // Date formatter
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+
+            // Populate data rows
+            int rowNum = 1;
+            for (Incident incident : incidents) {
+                Row row = sheet.createRow(rowNum++);
+
+                row.createCell(0).setCellValue(incident.getId());
+                row.createCell(1).setCellValue(incident.getTitle());
+                row.createCell(2).setCellValue(incident.getDescription());
+                row.createCell(3).setCellValue(incident.getSeverity());
+                row.createCell(4).setCellValue(incident.getStatus());
+                row.createCell(5).setCellValue(incident.getCreatedAt().format(formatter));
+                row.createCell(6).setCellValue(incident.getRecommendedAction());
+                row.createCell(7).setCellValue(incident.getEscalationMessage());
+                row.createCell(8).setCellValue(incident.getEscalatedBy());
+                row.createCell(9).setCellValue(incident.isEscalated());
+                row.createCell(10).setCellValue(incident.getAssignee());
+                row.createCell(11).setCellValue(String.join(", ", incident.getSources()));
+                row.createCell(12).setCellValue(String.join(", ", incident.getAffectedSystems()));
+                row.createCell(13).setCellValue(String.join(", ", incident.getEscalatedTo()));
+                row.createCell(14).setCellValue(String.join(", ", incident.getEscalatedToEmails()));
+                row.createCell(15).setCellValue(String.join(", ", incident.getEscalatedToPhones()));
+            }
+
+            workbook.write(out);
+            return new ByteArrayInputStream(out.toByteArray());
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to generate Excel file", e);
+        }
+    }
+
+    private CellStyle createHeaderStyle(Workbook workbook) {
+        CellStyle style = workbook.createCellStyle();
+        Font font = workbook.createFont();
+        font.setBold(true);
+        style.setFont(font);
+        return style;
+    }
+    // Total incidents
+    public long getTotalIncidentsCount() {
+        return incidentRepository.count();
+    }
+
+    // Resolved incidents
+    public long getResolvedIncidentsCount() {
+        return incidentRepository.countResolvedIncidents();
+    }
+
+    public long getOpenIncidentsCount() {
+        return incidentRepository.countOpenIncidents();
+    }
+
+
+    // Critical + High severity incidents
+    public long getCriticalHighIncidentsCount() {
+        return incidentRepository.countBySeverityIn(List.of("Critical", "High"));
+    }
 }
+

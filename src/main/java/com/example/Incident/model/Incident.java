@@ -51,6 +51,9 @@ public class Incident {
     private List<String> sources = new ArrayList<>();
 
     private String assignee;
+    private String category;
+    private String subcategory;
+
 
     @ElementCollection
     @CollectionTable(name = "incident_escalated_to_emails", joinColumns = @JoinColumn(name = "incident_id"))

@@ -140,7 +140,7 @@ public ResponseEntity<List<UserHoursDto>> getUserWeeklyHours(
     }
 
 
-@Scheduled(cron = "0 30 7 * * ?", zone = "Africa/Addis_Ababa")
+    @Scheduled(cron = "0 50 11 * * ?", zone = "Africa/Addis_Ababa")
  public void sendNotificationToAllAnalysts() {
        LocalDate todaytDay = LocalDate.now();
 
@@ -154,7 +154,7 @@ public ResponseEntity<List<UserHoursDto>> getUserWeeklyHours(
         String message = createScheduleMessage(schedules);
 
 
-        List<String> phoneNumbers = Arrays.asList("0912357931","0942094473","0910084446","0937673740");
+        List<String> phoneNumbers = Arrays.asList("0912357931","0910084446","0911514337");
 
 
         RestTemplate restTemplate = new RestTemplate();
@@ -205,6 +205,16 @@ public ResponseEntity<List<UserHoursDto>> getUserWeeklyHours(
         return messageBuilder.toString();
     }
 
+    @PostMapping("/repeat")
+    @PreAuthorize("hasAnyRole('USER')")
+    public ResponseEntity<String> repeatSchedule(
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate oldStart,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate oldEnd,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate newStart) {
+
+        schedulingService.repeatSchedule(oldStart, oldEnd, newStart);
+        return ResponseEntity.ok("Schedule repeated successfully.");
+    }
 
 
 

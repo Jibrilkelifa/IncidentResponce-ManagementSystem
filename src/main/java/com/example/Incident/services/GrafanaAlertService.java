@@ -80,23 +80,23 @@ public class GrafanaAlertService {
                                 newAlert.setSource(source);
 
                                 alertRepository.save(newAlert);
-                                System.out.println("Saved new alert: " + alertName);
                             }
                         }
                     } else {
-                        System.out.println("No 'alerts' found in Grafana response.");
                     }
                 } else {
-                    System.err.println("Unexpected response format: 'data' field missing.");
                 }
             } else {
-                System.err.println("Failed to fetch alerts: " + response.getStatusCode());
             }
         } catch (ClassCastException e) {
             System.err.println("ClassCastException: " + e.getMessage());
         } catch (RestClientException e) {
             System.err.println("Error connecting to Grafana API: " + e.getMessage());
         }
-        System.out.println("fetching alerts");
+
+    }
+
+    public List<Alert> getAlerts() {
+        return alertRepository.findAll();
     }
 }

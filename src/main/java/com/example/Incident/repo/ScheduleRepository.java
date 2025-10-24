@@ -75,5 +75,7 @@ List<Userr> findUsersAssignedOnLastThreeSundays(@Param("startDate") LocalDate st
 
 //    @Query("SELECT s.user FROM Schedule s WHERE s.date = :lastSunday AND s.type = :shiftType")
 //    List<Userr> findUsersAssignedOnLastSunday(@Param("lastSunday") LocalDate lastSunday, @Param("shiftType") ScheduleType shiftType);
+List<Schedule> findByDateBetween(LocalDate startDate, LocalDate endDate);
 
+//    boolean existsByUserAndDateAndShift(Userr user, LocalDate date, Shift shift);
 }

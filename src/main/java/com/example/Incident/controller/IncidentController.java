@@ -7,15 +7,24 @@ import com.example.Incident.repo.UserRepository;
 import com.example.Incident.services.DailyIPUpdateScheduler;
 import com.example.Incident.services.IncidentService;
 import com.example.Incident.services.NotificationService;
+import jakarta.annotation.Resource;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.io.InputStreamResource;
+import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
+import java.io.ByteArrayInputStream;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -38,6 +47,32 @@ public class IncidentController {
         return ResponseEntity.status(HttpStatus.CREATED).body(createdIncident);
 
     }
+    @GetMapping("/export")
+    public ResponseEntity<?> exportIncidents(
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime from,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime to) {
+        try {
+            ByteArrayInputStream in = incidentService.exportIncidents(from, to);
+            InputStreamResource resource = new InputStreamResource(in);
+
+            return ResponseEntity.ok()
+                    .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=incidents.xlsx")
+                    .header(HttpHeaders.CONTENT_LENGTH, String.valueOf(in.available()))
+                    .contentType(MediaType.valueOf("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
+                    .body(resource);
+
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Map.of("error", e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", "An unexpected error occurred while exporting the report."));
+        }
+    }
+
+
+
+
     @PutMapping("/update/{id}")
     @PreAuthorize("hasAnyRole('USER')")
     public ResponseEntity<Incident> updateIncidentFields(
@@ -175,12 +210,8 @@ public class IncidentController {
     }
     // Inside IncidentController.java
 
-    @GetMapping("/trends")
-    @PreAuthorize("hasAnyRole('USER')")
-    public ResponseEntity<Map<String, Integer>> getIncidentTrend() {
-        Map<String, Integer> trendData = incidentService.getIncidentTrendData();
-        return ResponseEntity.ok(trendData);
-    }
+
+
 
     @GetMapping("/today")
     @PreAuthorize("hasAnyRole('USER')")
@@ -207,6 +238,46 @@ public class IncidentController {
         List<Incident> incidents = incidentService.getIncidentsByDateRange(startOfMonth, endOfMonth);
         return ResponseEntity.ok(incidents);
     }
+
+    @GetMapping("/metrics/summary")
+    public Map<String, Long> getIncidentSummary() {
+        Map<String, Long> metrics = new HashMap<>();
+        metrics.put("totalIncidents", incidentService.getTotalIncidentsCount());
+        metrics.put("resolvedIncidents", incidentService.getResolvedIncidentsCount());
+        metrics.put("openIncidents", incidentService.getOpenIncidentsCount());
+        metrics.put("criticalHighIncidents", incidentService.getCriticalHighIncidentsCount());
+        return metrics;
+    }
+
+    @GetMapping("/metrics/total")
+    public Map<String, Long> getTotalIncidents() {
+        long count = incidentService.getTotalIncidentsCount();
+        return Collections.singletonMap("totalIncidents", count);
+    }
+
+    @GetMapping("/metrics/resolved")
+    public Map<String, Long> getResolvedIncidents() {
+        long count = incidentService.getResolvedIncidentsCount();
+        return Collections.singletonMap("resolvedIncidents", count);
+    }
+    @GetMapping("/metrics/trends")
+    public ResponseEntity<Map<String, Integer>> getIncidentTrend() {
+        Map<String, Integer> trendData = incidentService.getIncidentTrendData();
+        return ResponseEntity.ok(trendData);
+    }
+
+    @GetMapping("/metrics/open")
+    public Map<String, Long> getOpenIncidents() {
+        long count = incidentService.getOpenIncidentsCount();
+        return Collections.singletonMap("openIncidents", count);
+    }
+
+    @GetMapping("/metrics/critical-high")
+    public Map<String, Long> getCriticalHighIncidents() {
+        long count = incidentService.getCriticalHighIncidentsCount();
+        return Collections.singletonMap("criticalHighIncidents", count);
+    }
+
 
 
 
